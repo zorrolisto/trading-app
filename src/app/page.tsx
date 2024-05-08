@@ -122,7 +122,7 @@ export default function HomePage() {
     });
   };
   const getCandlesDataByFilter = async (date = "hoy") => {
-    const res = await fetch("https://alpaca-server.vercel.app", {
+    const res = await fetch("/api/alpaca", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intervalo: date }),
@@ -132,10 +132,10 @@ export default function HomePage() {
 
     const response = (await res.json()) as { respuesta: IData[] };
     if (stockLatestPrice === 0)
-      setStockLatestPrice(Number(response.respuesta[0]?.high));
+      setStockLatestPrice(Number(response.respuesta[0]?.HighPrice));
     const candlesFormat = response.respuesta.map((r) => ({
-      x: new Date(r.timestamp),
-      y: [r.open, r.high, r.low, r.close],
+      x: new Date(r.Timestamp),
+      y: [r.OpenPrice, r.HighPrice, r.LowPrice, r.ClosePrice],
     }));
     setCandlesData(candlesFormat);
   };

@@ -1,9 +1,9 @@
 export interface IData {
-  timestamp: string;
-  open: number;
-  low: number;
-  high: number;
-  close: number;
+  Timestamp: string;
+  OpenPrice: number;
+  LowPrice: number;
+  HighPrice: number;
+  ClosePrice: number;
 }
 export interface ICandle {
   x: Date;
