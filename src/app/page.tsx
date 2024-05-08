@@ -3,7 +3,6 @@
 import { SignedOut, SignedIn } from "@clerk/nextjs";
 import type { ApexOptions } from "apexcharts";
 import { useEffect, useState } from "react";
-import ReactApexChart from "react-apexcharts";
 import { data } from "~/constants";
 import {
   ERemitente,
@@ -12,8 +11,11 @@ import {
   type IMensaje,
   type IStock,
 } from "~/types";
+import dynamic from "next/dynamic";
 
-export const dynamic = "force-dynamic";
+const ChartDynamic = dynamic(() => import("./_components/chart"), {
+  ssr: false,
+});
 
 export default function HomePage() {
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
@@ -137,6 +139,7 @@ export default function HomePage() {
     }));
     setCandlesData(candlesFormat);
   };
+
   return (
     <main>
       <SignedOut>
@@ -190,14 +193,14 @@ export default function HomePage() {
               )}
             </div>
             <div className="h-[50vh] rounded-xl border-2 border-gray-300">
-              <ReactApexChart
-                options={data.options as unknown as ApexOptions}
-                series={
-                  [{ data: candlesData }] as unknown as ApexAxisChartSeries
-                }
-                type="candlestick"
-                height={380}
-              />
+              {window !== undefined && (
+                <ChartDynamic
+                  options={data.options as unknown as ApexOptions}
+                  data={
+                    [{ data: candlesData }] as unknown as ApexAxisChartSeries
+                  }
+                />
+              )}
             </div>
             <div className="mt-2 flex items-center gap-1">
               <p className="text-sm">Filtros de fecha: </p>

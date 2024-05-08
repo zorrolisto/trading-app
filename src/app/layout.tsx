@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className="bg-white">
+      <html lang="en">
         <body className={`font-sans ${inter.variable} flex flex-col gap-4`}>
           <TopNav />
           {children}
