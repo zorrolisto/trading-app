@@ -122,7 +122,7 @@ export default function HomePage() {
     });
   };
   const getCandlesDataByFilter = async (date = "hoy") => {
-    const res = await fetch("alpaca-server.vercel.app", {
+    const res = await fetch("https://alpaca-server.vercel.app", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intervalo: date }),
