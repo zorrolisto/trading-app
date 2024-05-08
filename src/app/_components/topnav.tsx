@@ -7,7 +7,7 @@ export function TopNav() {
 
       <div className="flex flex-row">
         <SignedOut>
-          <SignInButton>
+          <SignInButton mode="modal">
             <button className="rounded-full bg-white px-4 py-2 text-sm capitalize text-[#6e00ff]">
               Entrar
             </button>

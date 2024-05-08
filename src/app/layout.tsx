@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata = {
   title: "Trading",
-  description: "Programado por Julio Cabanillas",
+  description: "Programadores unidos jamás serán vencidos",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

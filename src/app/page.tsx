@@ -5,45 +5,15 @@ import type { ApexOptions } from "apexcharts";
 import { useEffect, useState } from "react";
 import ReactApexChart from "react-apexcharts";
 import { data } from "~/constants";
-// import { db } from "~/server/db";
+import {
+  ERemitente,
+  type IData,
+  type ICandle,
+  type IMensaje,
+  type IStock,
+} from "~/types";
 
 export const dynamic = "force-dynamic";
-
-/*async function Images() {
-  const images = await db.query.images.findMany({
-    orderBy: (model, { asc }) => asc(model.name),
-  });
-  return (
-    <div className="flex flex-wrap gap-4">
-      {images.map((img) => (
-        <div key={img.id} className="w-48 p-4">
-          <img src={img.url} />
-          <div>{img.name}</div>
-        </div>
-      ))}
-    </div>
-  );
-}*/
-interface IData {
-  timestamp: string;
-  open: number;
-  low: number;
-  high: number;
-  close: number;
-}
-interface ICandle {
-  x: Date;
-  y: number[];
-}
-const enum ERemitente {
-  MAQUINA,
-  PERSONA,
-}
-interface IMensaje {
-  orden: number;
-  text: string;
-  remitente: ERemitente;
-}
 
 export default function HomePage() {
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
@@ -51,52 +21,103 @@ export default function HomePage() {
   const [mensajes, setMensajes] = useState<IMensaje[]>([]);
   const [inputChat, setInputChat] = useState("");
   const [loadingResponse, setLoadingResponse] = useState(false);
+  const [userStock, setUserStock] = useState<IStock | null>(null);
+  const [stockLatestPrice, setStockLatestPrice] = useState(0);
 
   const filters = ["hoy", "3d", "1w", "1m", "6m", "1y", "5y"];
 
   useEffect(() => {
-    //if (data.series[0]) setCandlesData(data.series[0].data);
+    // if (data.series[0]) setCandlesData(data.series[0].data);
+    // setStockLatestPrice(600);
     void getCandlesDataByFilter();
+    void getUserStock();
   }, []);
 
+  const getUserStock = async () => {
+    const res = await fetch("/api/stocks");
+    const { stock } = (await res.json()) as { stock: IStock };
+    setUserStock(stock);
+  };
   const filterDataByDate = async (date: string) => {
     setSelectFilter(filters.findIndex((d) => d === date));
     await getCandlesDataByFilter(date);
   };
   const askAI = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter") return;
-    void getResponseFromAI(inputChat);
     setInputChat("");
+    void getResponseFromAI(inputChat);
   };
   const getResponseFromAI = async (messageForAI: string) => {
     setLoadingResponse(true);
-    setMensajes((msjs) => [
-      ...msjs,
+    const mensajesWithNew = [
+      ...mensajes,
       {
         orden: mensajes.length + 1,
         text: messageForAI,
         remitente: ERemitente.PERSONA,
       },
-    ]);
-    const res = await fetch("http://localhost:8000", {
+    ];
+    setMensajes(mensajesWithNew);
+    const res = await fetch("http://localhost:8000/agent/invoke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messageForAI }),
+      body: JSON.stringify({
+        input: {
+          input: messageForAI,
+          chat_history: mensajesWithNew.map((m) => ({
+            type: m.remitente,
+            content: m.text,
+          })),
+        },
+      }),
     });
-
-    if (!res.ok) throw new Error(`Error en la solicitud: ${res.status}`);
-
-    const response = (await res.json()) as { respuesta: string };
-    console.log(response);
+    const {
+      output: { output: response },
+    } = (await res.json()) as { output: { output: string } };
     setLoadingResponse(false);
-    setMensajes((msjs) => [
-      ...msjs,
-      {
-        orden: msjs.length + 1,
-        text: response.respuesta,
-        remitente: ERemitente.MAQUINA,
-      },
-    ]);
+    mensajesWithNew.push({
+      orden: mensajesWithNew.length + 1,
+      text: response,
+      remitente: ERemitente.MAQUINA,
+    });
+    setMensajes(mensajesWithNew);
+  };
+  const getHowMuchIEarned = () => {
+    if (!userStock?.costOfStock) return null;
+    const sign = stockLatestPrice - userStock.costOfStock > 0 ? "+" : "";
+    return sign + String(stockLatestPrice - userStock.costOfStock) + "$";
+  };
+  const sellStock = async () => {
+    if (userStock)
+      setUserStock({
+        ...userStock,
+        costOfStock: null,
+        cash: Number(userStock.cash) + stockLatestPrice,
+      });
+    await fetch("/api/stocks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        costOfStock: null,
+        cash: Number(userStock?.cash) + stockLatestPrice,
+      }),
+    });
+  };
+  const buyStock = async () => {
+    if (userStock)
+      setUserStock({
+        ...userStock,
+        costOfStock: stockLatestPrice,
+        cash: Number(userStock.cash) - stockLatestPrice,
+      });
+    await fetch("/api/stocks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        costOfStock: stockLatestPrice,
+        cash: Number(userStock?.cash) - stockLatestPrice,
+      }),
+    });
   };
   const getCandlesDataByFilter = async (date = "hoy") => {
     const res = await fetch("http://localhost:8001", {
@@ -108,6 +129,8 @@ export default function HomePage() {
     if (!res.ok) throw new Error(`Error en la solicitud: ${res.status}`);
 
     const response = (await res.json()) as { respuesta: IData[] };
+    if (stockLatestPrice === 0)
+      setStockLatestPrice(Number(response.respuesta[0]?.high));
     const candlesFormat = response.respuesta.map((r) => ({
       x: new Date(r.timestamp),
       y: [r.open, r.high, r.low, r.close],
@@ -126,11 +149,45 @@ export default function HomePage() {
       <SignedIn>
         <div className="flex flex-row justify-between gap-3 p-6">
           <div className="w-full">
-            <div className="mb-1 flex items-center gap-5">
+            <div className="mb-1 flex items-center justify-between gap-5">
               <h3 className="text-2xl font-medium text-gray-800">
-                Gráfico de Velas{" "}
-                <strong className="text-gray-500">(SPY)</strong>
+                Gráfico de Velas
+                <strong className="ml-1 text-gray-500">(MSFT)</strong>
               </h3>
+              {userStock && (
+                <div className="flex items-center">
+                  <div className="mr-2 text-sm">
+                    Saldo
+                    <strong className="mx-1 text-gray-500">
+                      {Number(userStock?.cash).toFixed(2)}$
+                    </strong>
+                  </div>
+                  <div className="mr-2 text-sm">
+                    Tienes
+                    <strong className="mx-1 text-gray-500">
+                      {Number(userStock.costOfStock !== null)} acciones
+                    </strong>
+                    <span className="text-success">{getHowMuchIEarned()}</span>
+                  </div>
+                  <div className="space-x-1">
+                    {userStock.costOfStock === null ? (
+                      <button
+                        className="btn btn-primary btn-xs text-white"
+                        onClick={buyStock}
+                      >
+                        Comprar ({stockLatestPrice}$)
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-primary btn-xs text-white"
+                        onClick={sellStock}
+                      >
+                        Vender ({stockLatestPrice}$)
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="h-[50vh] rounded-xl border-2 border-gray-300">
               <ReactApexChart
@@ -147,7 +204,7 @@ export default function HomePage() {
               {filters.map((f, idx) => (
                 <button
                   key={idx}
-                  className="btn btn-xs btn-primary text-white"
+                  className="btn btn-primary btn-xs text-white"
                   style={{
                     backgroundColor:
                       idx === selectFilter ? "#6e00ff" : "#7480ff",
@@ -195,16 +252,17 @@ export default function HomePage() {
               </div>
               <div className="flex h-[12.5%] items-center justify-center border-t-2 border-gray-300">
                 <input
-                  className="mx-1.5 w-full rounded-lg bg-gray-100 p-1.5 text-sm"
+                  className="mx-1.5 w-full rounded-lg bg-gray-100 p-1.5 text-sm text-gray-600"
                   type="text"
                   placeholder="Pregunta algo..."
                   onChange={(e) => setInputChat(e.target.value)}
+                  value={inputChat}
                   onKeyUp={askAI}
                 />
               </div>
             </div>
             {loadingResponse && (
-              <div className="text-primary mt-1 w-full text-center text-xs font-bold">
+              <div className="mt-1 w-full text-center text-xs font-bold text-primary">
                 La IA está pensando...
               </div>
             )}
