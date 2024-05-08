@@ -132,7 +132,9 @@ export default function HomePage() {
 
     const response = (await res.json()) as { respuesta: IData[] };
     if (stockLatestPrice === 0)
-      setStockLatestPrice(Number(response.respuesta[0]?.HighPrice));
+      setStockLatestPrice(
+        Number(response.respuesta[response.respuesta.length - 1]?.HighPrice),
+      );
     const candlesFormat = response.respuesta.map((r) => ({
       x: new Date(r.Timestamp),
       y: [r.OpenPrice, r.HighPrice, r.LowPrice, r.ClosePrice],
