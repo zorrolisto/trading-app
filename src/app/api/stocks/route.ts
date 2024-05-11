@@ -8,12 +8,14 @@ export async function GET() {
 }
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
-    costOfStock: string | null;
+    numberOfStocks: number;
+    totalCostOfStocks: number;
     cash: number;
   };
   // eslint-disable-next-line drizzle/enforce-update-with-where
   const stock = await db.update(stockUser).set({
-    costOfStock: body.costOfStock,
+    numberOfStocks: String(body.numberOfStocks),
+    totalCostOfStocks: String(body.totalCostOfStocks),
     cash: String(body.cash),
   });
   return NextResponse.json({ stock });

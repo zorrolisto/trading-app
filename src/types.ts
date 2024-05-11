@@ -22,7 +22,12 @@ export interface IStock {
   id: number;
   userId: number;
   cash: number;
-  costOfStock: null | number;
+  numberOfStocks: number;
+  totalCostOfStocks: number;
   createdAt: Date;
   updatedAt: Date;
+}
+export interface ICarteraDeAcciones {
+  total: number;
+  earn: number;
 }

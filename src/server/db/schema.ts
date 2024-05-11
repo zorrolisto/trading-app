@@ -31,7 +31,8 @@ export const users = createTable("user", {
 export const stockUser = createTable("stock_user", {
   id: serial("id").primaryKey(),
   cash: numeric("cash").notNull(),
-  costOfStock: numeric("cost_of_stock"),
+  numberOfStocks: numeric("number_of_stocks"),
+  totalCostOfStocks: numeric("total_cost_of_stocks"),
   userId: integer("user_id"),
   createdAt: timestamp("created_at")
     .default(sql`CURRENT_TIMESTAMP`)
