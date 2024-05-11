@@ -221,7 +221,7 @@ export default function HomePage() {
                   <div className="flex items-center">
                     {carteraDeAcciones && (
                       <>
-                        <div>{carteraDeAcciones?.total}$</div>
+                        <div>{carteraDeAcciones?.total.toFixed(2)}$</div>
                         {carteraDeAcciones?.earn !== 0 && (
                           <span
                             className={`ml-2 text-sm
@@ -232,7 +232,7 @@ export default function HomePage() {
                             } `}
                           >
                             {carteraDeAcciones?.earn >= 0 && "+"}
-                            {carteraDeAcciones?.earn}$
+                            {carteraDeAcciones?.earn.toFixed(2)}$
                           </span>
                         )}
                       </>
