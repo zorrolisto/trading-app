@@ -14,6 +14,7 @@ import {
 } from "~/types";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useAuth } from "@clerk/nextjs";
 
 const ChartDynamic = dynamic(() => import("./_components/chart"), {
   ssr: false,
@@ -35,21 +36,24 @@ export default function HomePage() {
   const [carteraDeAcciones, setCarteraDeAcciones] =
     useState<ICarteraDeAcciones | null>({ earn: 0, total: 0 });
   const [stockLatestPrice, setStockLatestPrice] = useState(0);
+  const { userId } = useAuth();
 
   const filters = ["hoy", "3d", "1w", "1m", "6m", "1y", "5y"];
 
   useEffect(() => {
     // if (data.series[0]) setCandlesData(data.series[0].data);
     // setStockLatestPrice(600);
-    void getCandlesDataByFilter();
-    void getUserStock();
-  }, []);
+    if (userId) {
+      void getCandlesDataByFilter();
+      void getUserStock();
+    }
+  }, [userId]);
   useEffect(() => {
     updateCarteraDeAcciones();
   }, [userStock, stockLatestPrice]);
 
   const getUserStock = async () => {
-    const res = await fetch("/api/stocks");
+    const res = await fetch("/api/stocks?userId=" + userId);
     const { stock } = (await res.json()) as { stock: IStock };
     setUserStock(stock);
   };
@@ -106,7 +110,7 @@ export default function HomePage() {
     });
   };
   const sellStock = async () => {
-    if (!userStock) return;
+    if (!userStock || !userId) return;
     const cash =
       Number(userStock.cash) + stockLatestPrice * userStock.numberOfStocks;
     const [numberOfStocks, totalCostOfStocks] = [0, 0];
@@ -114,11 +118,11 @@ export default function HomePage() {
     await fetch("/api/stocks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numberOfStocks, totalCostOfStocks, cash }),
+      body: JSON.stringify({ numberOfStocks, totalCostOfStocks, cash, userId }),
     });
   };
   const addCash = async () => {
-    if (!userStock) return;
+    if (!userStock || !userId) return;
     const cash = Number(userStock.cash) + 1000;
     setUserStock({
       ...userStock,
@@ -131,11 +135,12 @@ export default function HomePage() {
         numberOfStocks: userStock.numberOfStocks,
         totalCostOfStocks: userStock.totalCostOfStocks,
         cash,
+        userId,
       }),
     });
   };
   const buyStock = async () => {
-    if (!userStock) return;
+    if (!userStock || !userId) return;
     const numberOfStocks = Number(userStock.numberOfStocks) + 1;
     const totalCostOfStocks =
       Number(userStock.totalCostOfStocks) + stockLatestPrice;
@@ -144,7 +149,7 @@ export default function HomePage() {
     await fetch("/api/stocks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numberOfStocks, totalCostOfStocks, cash }),
+      body: JSON.stringify({ numberOfStocks, totalCostOfStocks, cash, userId }),
     });
   };
   const getCandlesDataByFilter = async (date = "hoy") => {
