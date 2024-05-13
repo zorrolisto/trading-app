@@ -77,19 +77,22 @@ export default function HomePage() {
       },
     ];
     setMensajes(mensajesWithNew);
-    const res = await fetch("http://localhost:8000/agent/invoke", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        input: {
-          input: messageForAI,
-          chat_history: mensajesWithNew.map((m) => ({
-            type: m.remitente,
-            content: m.text,
-          })),
-        },
-      }),
-    });
+    const res = await fetch(
+      "http://tallerintegradorchatbot.store/agent/invoke",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          input: {
+            input: messageForAI,
+            chat_history: mensajesWithNew.map((m) => ({
+              type: m.remitente,
+              content: m.text,
+            })),
+          },
+        }),
+      },
+    );
     const {
       output: { output: response },
     } = (await res.json()) as { output: { output: string } };
