@@ -78,7 +78,7 @@ export default function HomePage() {
     ];
     setMensajes(mensajesWithNew);
     const res = await fetch(
-      "http://tallerintegradorchatbot.store/agent/invoke",
+      "https://chatbotparatallerintegrador.online/agent/invoke",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
