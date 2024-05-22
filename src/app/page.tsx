@@ -15,6 +15,7 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
+import ManualDeUsuario from "./_components/ManualDeUsuario";
 
 const ChartDynamic = dynamic(() => import("./_components/chart"), {
   ssr: false,
@@ -268,6 +269,23 @@ export default function HomePage() {
                   {!userStock ? "-" : Number(userStock?.cash).toFixed(2)}$
                 </div>
               </div>
+              <div className="ml-auto flex flex-col gap-2 rounded-xl border-2 border-gray-200 p-4">
+                <div className="text-center font-bold text-gray-600">
+                  Manual de Usuario
+                </div>
+                <button
+                  className="btn btn-primary btn-xs text-white"
+                  onClick={() => {
+                    const element: { showModal: () => 0 } =
+                      document?.getElementById("my_modal_2") as unknown as {
+                        showModal: () => 0;
+                      };
+                    element.showModal();
+                  }}
+                >
+                  Abrir
+                </button>
+              </div>
             </div>
             <div className="flex gap-3">
               <div className="w-full">
@@ -284,10 +302,11 @@ export default function HomePage() {
                   {filters.map((f, idx) => (
                     <button
                       key={idx}
-                      className="btn btn-primary btn-xs text-white"
+                      className="btn btn-primary btn-xs border-2 text-white"
                       style={{
                         backgroundColor:
-                          idx === selectFilter ? "#6e00ff" : "#7480ff",
+                          idx === selectFilter ? "#fff" : "#4a00ff",
+                        color: idx === selectFilter ? "#4a00ff" : "#fff",
                       }}
                       onClick={() => filterDataByDate(f)}
                     >
@@ -339,6 +358,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          <ManualDeUsuario />
         </div>
       </SignedIn>
     </main>
