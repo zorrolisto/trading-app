@@ -78,7 +78,7 @@ export default function HomePage() {
     ];
     setMensajes(mensajesWithNew);
     const res = await fetch(
-      "https://chatbotparatallerintegrador.online/agent/invoke",
+      process.env.NEXT_PUBLIC_CHATBOT_API + "/agent/invoke",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
