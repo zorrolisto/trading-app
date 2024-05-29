@@ -73,7 +73,12 @@ export default function HomePage() {
       ...mensajes,
       {
         orden: mensajes.length + 1,
-        text: messageForAI,
+        text:
+          messageForAI +
+          "--- metadata de este mensaje: userStock = " +
+          JSON.stringify(userStock) +
+          ", carteraDeAcciones = " +
+          JSON.stringify(carteraDeAcciones),
         remitente: ERemitente.PERSONA,
       },
     ];
@@ -168,7 +173,7 @@ export default function HomePage() {
     const response = (await res.json()) as { respuesta: IData[] };
     if (stockLatestPrice === 0)
       setStockLatestPrice(
-        response.respuesta[response.respuesta.length - 1]?.HighPrice ?? 0,
+        response.respuesta[response.respuesta.length - 1]?.ClosePrice ?? 0,
       );
     // setStockLatestPrice(200);
     const candlesFormat = response.respuesta.map((r) => ({
@@ -335,7 +340,7 @@ export default function HomePage() {
                             : "chat-bubble-info")
                         }
                       >
-                        {m.text}
+                        {m.text.split("---")[0]}
                       </div>
                     </div>
                   ))}
