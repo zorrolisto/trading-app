@@ -10,7 +10,6 @@ import {
   type ICandle,
   type IMensaje,
   type IStock,
-  type ICarteraDeAcciones,
   type IStockUser,
   type IStockInPossession,
   type ITransaction,
@@ -73,7 +72,7 @@ const StockGanancia = (props: {
 export default function HomePage() {
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
   const [selectFilter, setSelectFilter] = useState(0);
-  const [tabSelected, setTabSelected] = useState(3);
+  const [tabSelected, setTabSelected] = useState(1);
   const [mensajes, setMensajes] = useState<IMensaje[]>(defaultMessages);
   const [inputChat, setInputChat] = useState("");
   const [loadingResponse, setLoadingResponse] = useState(false);
@@ -84,8 +83,6 @@ export default function HomePage() {
     IStockInPossession[]
   >([]);
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
-  const [carteraDeAcciones, setCarteraDeAcciones] =
-    useState<ICarteraDeAcciones | null>({ earn: 0, total: 0 });
   const [stocksLatestPrice, setStocksLatestPrice] = useState<
     Record<string, number>
   >({});
@@ -104,10 +101,6 @@ export default function HomePage() {
     void getCandlesDataByFilter(filters[selectFilter]);
     setStockLatestPrice(stocksLatestPrice[stockSelected.nameInMarket] ?? 0);
   }, [stockSelected]);
-  useEffect(() => {
-    if (!userStock || !stockLatestPrice) return;
-    updateCarteraDeAcciones();
-  }, [userStock, stockLatestPrice]);
 
   const initPage = async () => {
     const res = await fetch("/api/init-page?userId=" + userId);
@@ -136,12 +129,7 @@ export default function HomePage() {
       ...mensajes,
       {
         orden: mensajes.length + 1,
-        text:
-          messageForAI +
-          "--- metadata de este mensaje: userStock = " +
-          JSON.stringify(userStock) +
-          ", carteraDeAcciones = " +
-          JSON.stringify(carteraDeAcciones),
+        text: messageForAI,
         remitente: ERemitente.PERSONA,
       },
     ];
@@ -172,14 +160,6 @@ export default function HomePage() {
       remitente: ERemitente.MAQUINA,
     });
     setMensajes(mensajesWithNew);
-  };
-  const updateCarteraDeAcciones = () => {
-    if (!userStock || stocksLatestPrice.length === 0) return null;
-    const costoAhora = 0; //userStock.numberOfStocks * stockLatestPrice;
-    setCarteraDeAcciones({
-      earn: costoAhora - userStock.totalCostOfStocks,
-      total: costoAhora,
-    });
   };
   const sellStock = async (p: IStockInPossession) => {
     if (!userStock || !userId || !stockSelected) return;

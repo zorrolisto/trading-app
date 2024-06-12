@@ -49,10 +49,6 @@ export interface IStockUser extends IBase {
   cash: number;
   totalCostOfStocks: number;
 }
-export interface ICarteraDeAcciones {
-  total: number;
-  earn: number;
-}
 export interface IInitPage {
   stocks: IStock[];
   stockUser: IStockUser;
