@@ -1,3 +1,5 @@
+import { ERemitente } from "./types";
+
 export const data = {
   series: [
     {
@@ -264,3 +266,11 @@ export const data = {
     },
   },
 };
+
+export const defaultMessages = [
+  {
+    orden: 0,
+    remitente: ERemitente.MAQUINA,
+    text: "Hola soy StockBot, necesitas un consejo? :)",
+  },
+];

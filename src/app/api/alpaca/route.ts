@@ -18,8 +18,9 @@ function formatDate(date: Date): string {
 }
 
 export async function POST(request: NextRequest) {
-  const { intervalo } = (await request.json()) as {
+  const { intervalo, stockName } = (await request.json()) as {
     intervalo: EIntervalo;
+    stockName: string;
   };
   const alpaca = new Alpaca({
     keyId: process.env.ALPACA_API_KEY_ID,
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     timeframe = alpaca.timeframeUnit.MONTH;
   }
 
-  const res = alpaca.getBarsV2("MSFT", {
+  const res = alpaca.getBarsV2(stockName, {
     start: formatDate(start_time),
     timeframe: alpaca.newTimeframe(1, timeframe),
   });

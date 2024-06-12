@@ -1,36 +1,42 @@
 import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { stockUser } from "~/server/db/schema";
+import { inPossession, sUser, transaction } from "~/server/db/schema";
+import type { ETypeTransaction } from "~/types";
 
-export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("userId");
-  const stock = await db.query.stockUser.findFirst({
-    where: eq(stockUser.userId, String(userId)),
-  });
-  if (!stock) {
-    const res = await db
-      .insert(stockUser)
-      .values({ cash: "1000", userId: String(userId) })
-      .returning();
-    return NextResponse.json({ stock: res[0] });
-  }
-  return NextResponse.json({ stock });
-}
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
-    numberOfStocks: number;
     totalCostOfStocks: number;
     cash: number;
     userId: string;
+    stockLatestPrice: number;
+    stockInPosessionId: number;
+    stockId: number;
+    type: ETypeTransaction;
+    totalCost: number;
+    quantity: number;
   };
-  const stock = await db
-    .update(stockUser)
+  await db
+    .update(sUser)
     .set({
-      numberOfStocks: String(body.numberOfStocks),
       totalCostOfStocks: String(body.totalCostOfStocks),
       cash: String(body.cash),
     })
-    .where(eq(stockUser.userId, body.userId));
-  return NextResponse.json({ stock });
+    .where(eq(sUser.userId, body.userId));
+  await db
+    .update(inPossession)
+    .set({
+      totalCost: String(body.totalCost),
+      quantity: String(body.quantity),
+    })
+    .where(eq(inPossession.id, body.stockInPosessionId));
+  await db.insert(transaction).values({
+    userId: String(body.userId),
+    invested: String(body.stockLatestPrice),
+    type: body.type,
+    stockCost: String(body.stockLatestPrice),
+    stockId: String(body.stockId),
+  });
+
+  return NextResponse.json({ ok: true });
 }

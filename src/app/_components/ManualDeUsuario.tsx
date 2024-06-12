@@ -49,8 +49,8 @@ export default function ManualDeUsuario() {
         <div className="divider"></div>
         <ul className="">
           {stepsGuia.map((s, idx) => (
-            <>
-              <li key={idx} className="">
+            <div key={idx}>
+              <li className="">
                 <p className="mb-3 text-sm">
                   {idx + 1}. {s.text}
                 </p>
@@ -64,7 +64,7 @@ export default function ManualDeUsuario() {
                 </div>
               </li>
               {idx !== stepsGuia.length - 1 && <div className="divider"></div>}
-            </>
+            </div>
           ))}
         </ul>
       </div>
