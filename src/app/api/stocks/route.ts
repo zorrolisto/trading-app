@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     cash: number;
     userId: string;
     stockLatestPrice: number;
+    invested: number;
     stockInPosessionId: number;
     stockId: number;
     type: ETypeTransaction;
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     .where(eq(inPossession.id, body.stockInPosessionId));
   await db.insert(transaction).values({
     userId: String(body.userId),
-    invested: String(body.stockLatestPrice),
+    invested: String(body.invested),
     type: body.type,
     stockCost: String(body.stockLatestPrice),
     stockId: String(body.stockId),

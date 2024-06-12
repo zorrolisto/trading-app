@@ -64,7 +64,8 @@ const StockGanancia = (props: {
     <td
       className={`text-bold ${ganancia < 0 ? "text-red-500" : "text-green-500"}`}
     >
-      {ganancia.toFixed(2)}
+      {ganancia > 0 && "+"}
+      {ganancia.toFixed(2)}$
     </td>
   );
 };
@@ -111,6 +112,8 @@ export default function HomePage() {
   const initPage = async () => {
     const res = await fetch("/api/init-page?userId=" + userId);
     const response = (await res.json()) as IInitPage;
+    console.log("response");
+    console.log(response);
     setStocks(response.stocks);
     setStockSelected(response.stocks[0]);
     setStocksInPossession(response.stocksInPossessions);
@@ -178,15 +181,51 @@ export default function HomePage() {
       total: costoAhora,
     });
   };
-  const sellStock = async () => {
-    if (!userStock || !userId) return;
-    const cash = Number(userStock.cash) + 0; //  stocksLatestPrice * 0; //userStock.numberOfStocks;
-    const [numberOfStocks, totalCostOfStocks] = [0, 0];
+  const sellStock = async (p: IStockInPossession) => {
+    if (!userStock || !userId || !stockSelected) return;
+    const stock = stocks.find((s) => s.id === Number(p.stockId));
+    const stockLatestPriceOfP =
+      stocksLatestPrice[stock?.nameInMarket ?? ""] ?? 0;
+    const cash = Number(userStock.cash) + stockLatestPriceOfP * p.quantity;
+    const totalCostOfStocks = userStock.totalCostOfStocks - p.totalCost;
     setUserStock({ ...userStock, totalCostOfStocks, cash });
+    const newStocksInP: IStockInPossession[] = stocksInPossession.map((s) => {
+      let { totalCost, quantity } = s;
+      if (s.id === p.id) {
+        totalCost = 0;
+        quantity = 0;
+      }
+      return { ...s, totalCost, quantity };
+    });
+    setStocksInPossession(newStocksInP);
+    setTransactions((t) => [
+      {
+        id: new Date().getDate(),
+        invested: stockLatestPriceOfP * p.quantity,
+        type: ETypeTransaction.VENTA,
+        stockCost: stockLatestPriceOfP,
+        stockId: p.stockId,
+        userId: Number(userId),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      ...t,
+    ]);
     await fetch("/api/stocks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numberOfStocks, totalCostOfStocks, cash, userId }),
+      body: JSON.stringify({
+        totalCostOfStocks,
+        cash,
+        userId,
+        stockLatestPrice: stockLatestPriceOfP,
+        invested: stockLatestPriceOfP * p.quantity,
+        stockId: p.stockId,
+        type: ETypeTransaction.VENTA,
+        totalCost: 0,
+        quantity: 0,
+        stockInPosessionId: p.id,
+      }),
     });
   };
   const addCash = async () => {
@@ -231,7 +270,6 @@ export default function HomePage() {
     });
     setStocksInPossession(newStocksInP);
     setTransactions((t) => [
-      ...t,
       {
         id: new Date().getDate(),
         invested: stockLatestPrice,
@@ -242,6 +280,7 @@ export default function HomePage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
+      ...t,
     ]);
     void fetch("/api/stocks", {
       method: "POST",
@@ -251,6 +290,7 @@ export default function HomePage() {
         cash,
         userId,
         stockLatestPrice,
+        invested: stockLatestPrice,
         stockId: stockSelected.id,
         type: ETypeTransaction.COMPRA,
         totalCost: newTotalCost,
@@ -338,30 +378,12 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-4">
-                <div className="font-bold text-gray-600">
-                  Cartera de Acciones
-                </div>
+                <div className="font-bold text-gray-600">Total Invertido</div>
                 <div className="flex items-center">
-                  {carteraDeAcciones && (
-                    <>
-                      <div>{carteraDeAcciones?.total.toFixed(2)}$</div>
-                      {carteraDeAcciones?.earn !== 0 && (
-                        <span
-                          className={`ml-2 text-sm
-                            ${
-                              carteraDeAcciones.earn < 0
-                                ? "text-red-500"
-                                : "text-green-500"
-                            } `}
-                        >
-                          {carteraDeAcciones?.earn >= 0 && "+"}
-                          {carteraDeAcciones?.earn.toFixed(2)}$
-                        </span>
-                      )}
-                    </>
-                  )}
+                  {Number(userStock?.totalCostOfStocks ?? 0).toFixed(2)}$
                 </div>
               </div>
+
               <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center gap-16">
                   <div className="font-bold text-gray-600">Cash</div>
@@ -480,17 +502,9 @@ export default function HomePage() {
                                   )}
                                 />
                               </td>
-                              <td
-                                className={`font-bold ${
-                                  t.type === ETypeTransaction.VENTA
-                                    ? "text-red-500"
-                                    : "text-green-500"
-                                }`}
-                              >
-                                {t.type.toUpperCase()}
-                              </td>
-                              <td>$ {t.stockCost}</td>
-                              <td>{t.invested / t.stockCost}</td>
+                              <td>{t.type}</td>
+                              <td>$ {t.invested}</td>
+                              <td>{(t.invested / t.stockCost).toFixed(0)}</td>
                               <td>
                                 {t.createdAt
                                   .replace("T", " ")
@@ -513,7 +527,7 @@ export default function HomePage() {
                             <th>Ganancia</th>
                             <th>Invertido $</th>
                             <th>Cantidad</th>
-                            <th>Vender</th>
+                            <th>Acciones</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -537,8 +551,11 @@ export default function HomePage() {
                               <td>{Number(p.totalCost).toFixed(2)}$</td>
                               <td>{p.quantity}</td>
                               <td>
-                                <button className="btn btn-primary btn-xs">
-                                  -
+                                <button
+                                  className="btn btn-primary btn-xs"
+                                  onClick={() => sellStock(p)}
+                                >
+                                  Vender todo
                                 </button>
                               </td>
                             </tr>
