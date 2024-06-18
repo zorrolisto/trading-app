@@ -15,11 +15,14 @@ import {
   type ITransaction,
   type IInitPage,
   ETypeTransaction,
+  type ISimulationHTMLs,
+  type ISimulateForm,
 } from "~/types";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
 import ManualDeUsuario from "./_components/ManualDeUsuario";
+import Simulation from "./_components/Simulation";
 
 const ChartDynamic = dynamic(() => import("./_components/chart"), {
   ssr: false,
@@ -69,15 +72,23 @@ const StockGanancia = (props: {
   );
 };
 
+const simulateFormsDefault: ISimulateForm = {
+  budget: 1000,
+  cash_at_risk: 0.5,
+  start_date: "2023-12-01",
+  end_date: "2023-12-31",
+};
 export default function HomePage() {
+  const [isLoading, setIsLoading] = useState(false);
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
   const [selectFilter, setSelectFilter] = useState(0);
-  const [tabSelected, setTabSelected] = useState(1);
+  const [tabSelected, setTabSelected] = useState(4);
   const [mensajes, setMensajes] = useState<IMensaje[]>(defaultMessages);
   const [inputChat, setInputChat] = useState("");
   const [loadingResponse, setLoadingResponse] = useState(false);
   const [userStock, setUserStock] = useState<IStockUser | null>(null);
   const [stocks, setStocks] = useState<IStock[]>([]);
+  const [simulateForms, setSimulateForms] = useState(simulateFormsDefault);
   const [stockSelected, setStockSelected] = useState<IStock>();
   const [stocksInPossession, setStocksInPossession] = useState<
     IStockInPossession[]
@@ -86,6 +97,7 @@ export default function HomePage() {
   const [stocksLatestPrice, setStocksLatestPrice] = useState<
     Record<string, number>
   >({});
+  const [simulationHtmls, setSimulationHtmls] = useState<ISimulationHTMLs>();
   const [stockLatestPrice, setStockLatestPrice] = useState(0);
   const { userId } = useAuth();
 
@@ -103,6 +115,7 @@ export default function HomePage() {
   }, [stockSelected]);
 
   const initPage = async () => {
+    setIsLoading(true);
     const res = await fetch("/api/init-page?userId=" + userId);
     const response = (await res.json()) as IInitPage;
     console.log("response");
@@ -219,7 +232,6 @@ export default function HomePage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        // numberOfStocks: userStock.numberOfStocks,
         totalCostOfStocks: userStock.totalCostOfStocks,
         cash,
         userId,
@@ -295,6 +307,25 @@ export default function HomePage() {
       y: [r.OpenPrice, r.HighPrice, r.LowPrice, r.ClosePrice],
     }));
     setCandlesData(candlesFormat);
+    setIsLoading(false);
+  };
+  const makeSimulation = async () => {
+    setIsLoading(true);
+    const url =
+      process.env.NEXT_PUBLIC_CHATBOT_API +
+      `/simulation?start_date=${encodeURIComponent(simulateForms.start_date)}&end_date=${encodeURIComponent(simulateForms.end_date)}&symbol=${stockSelected?.nameInMarket}&cash_at_risk=${encodeURIComponent(simulateForms.cash_at_risk.toString())}&budget=${encodeURIComponent(simulateForms.budget.toString())}`;
+    const res = await fetch(url);
+    const response = (await res.json()) as ISimulationHTMLs;
+    console.log("response");
+    console.log(response);
+    setSimulationHtmls(response);
+    const element: { showModal: () => 0 } = document?.getElementById(
+      "my_modal_3",
+    ) as unknown as {
+      showModal: () => 0;
+    };
+    element.showModal();
+    setIsLoading(false);
   };
 
   return (
@@ -307,6 +338,11 @@ export default function HomePage() {
         </div>
       </SignedOut>
       <SignedIn>
+        {isLoading && (
+          <div className="absolute bottom-0 left-0 right-0 top-0 z-50 flex h-screen w-screen items-center justify-center bg-black/80">
+            <h1 className="text-xl font-medium text-white">Cargando...</h1>
+          </div>
+        )}
         <div className="p-6">
           <div className="space-y-3">
             <div className="mb-5 flex gap-3">
@@ -400,6 +436,9 @@ export default function HomePage() {
               <a
                 role="tab"
                 className={`tab ${tabSelected === 1 && "tab-active"}`}
+                style={{
+                  color: tabSelected === 1 ? "white" : "black",
+                }}
                 onClick={() => setTabSelected(1)}
               >
                 Gráfico
@@ -407,6 +446,9 @@ export default function HomePage() {
               <a
                 role="tab"
                 className={`tab ${tabSelected === 2 && "tab-active"}`}
+                style={{
+                  color: tabSelected === 2 ? "white" : "black",
+                }}
                 onClick={() => setTabSelected(2)}
               >
                 Historial
@@ -414,13 +456,19 @@ export default function HomePage() {
               <a
                 role="tab"
                 className={`tab ${tabSelected === 3 && "tab-active"}`}
+                style={{
+                  color: tabSelected === 3 ? "white" : "black",
+                }}
                 onClick={() => setTabSelected(3)}
               >
                 Cartera
               </a>
               <a
                 role="tab"
-                className={`tab ${tabSelected === 4 && "tab-active"}`}
+                className={`tab ${tabSelected === 4 && "tab-active font-medium"}`}
+                style={{
+                  color: tabSelected === 4 ? "white" : "black",
+                }}
                 onClick={() => setTabSelected(4)}
               >
                 Simulación
@@ -547,7 +595,102 @@ export default function HomePage() {
                 )}
                 {tabSelected === 4 && (
                   <div className="h-[50vh] rounded-xl border border-gray-200">
-                    <div>Aqui está la simiulación</div>
+                    <div className="ml-4 grid grid-cols-2 gap-2">
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text text-xs font-medium text-gray-500">
+                            Cash Total
+                          </span>
+                        </div>
+                        <input
+                          type="number"
+                          step="1000"
+                          value={simulateForms.budget}
+                          onChange={(e) =>
+                            setSimulateForms({
+                              ...simulateForms,
+                              budget: Number(e.target.value),
+                            })
+                          }
+                          placeholder="Type here"
+                          className="input input-sm input-bordered w-full max-w-xs"
+                        />
+                      </label>
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text text-xs font-medium text-gray-500">
+                            Perdida máxima (0.0 a 1.0)
+                          </span>
+                        </div>
+                        <input
+                          value={simulateForms.cash_at_risk}
+                          onChange={(e) =>
+                            setSimulateForms({
+                              ...simulateForms,
+                              cash_at_risk: Number(e.target.value),
+                            })
+                          }
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="1"
+                          placeholder="Type here"
+                          className="input input-sm input-bordered w-full max-w-xs"
+                        />
+                      </label>
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text text-xs font-medium text-gray-500">
+                            Fecha de Inicio
+                          </span>
+                        </div>
+                        <input
+                          type="date"
+                          placeholder="Type here"
+                          className="input input-sm input-bordered w-full max-w-xs"
+                          value={simulateForms.start_date}
+                          onChange={(e) =>
+                            setSimulateForms({
+                              ...simulateForms,
+                              start_date: e.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text text-xs font-medium text-gray-500">
+                            Fecha de Fin
+                          </span>
+                        </div>
+                        <input
+                          type="date"
+                          placeholder="Type here"
+                          className="input input-sm input-bordered w-full max-w-xs"
+                          value={simulateForms.end_date}
+                          onChange={(e) =>
+                            setSimulateForms({
+                              ...simulateForms,
+                              end_date: e.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="mr-4 mt-4 flex justify-end gap-2">
+                      <button
+                        className="btn btn-outline btn-primary btn-sm"
+                        onClick={() => setSimulateForms(simulateFormsDefault)}
+                      >
+                        Limpiar
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm text-white"
+                        onClick={makeSimulation}
+                      >
+                        Simular
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -595,11 +738,9 @@ export default function HomePage() {
             </div>
           </div>
           <ManualDeUsuario />
+          <Simulation simulationHtmls={simulationHtmls} />
         </div>
       </SignedIn>
     </main>
   );
 }
-
-// TODO:
-// verificar que tengas más de lo que cueste el stock

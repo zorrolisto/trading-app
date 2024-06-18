@@ -56,3 +56,15 @@ export interface IInitPage {
   stocksInPossessions: IStockInPossession[];
   stocksLatestPrice: Record<string, number>;
 }
+
+export interface ISimulationHTMLs {
+  plot_content: string;
+  trades_content: string;
+}
+
+export interface ISimulateForm {
+  start_date: string;
+  end_date: string;
+  cash_at_risk: number;
+  budget: number;
+}
