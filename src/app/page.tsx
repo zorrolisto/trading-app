@@ -73,16 +73,17 @@ const StockGanancia = (props: {
 };
 
 const simulateFormsDefault: ISimulateForm = {
-  budget: 1000,
+  budget: 10000,
   cash_at_risk: 0.5,
   start_date: "2023-12-01",
   end_date: "2023-12-31",
+  strategy_type: "wyckoff",
 };
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
   const [selectFilter, setSelectFilter] = useState(0);
-  const [tabSelected, setTabSelected] = useState(4);
+  const [tabSelected, setTabSelected] = useState(1);
   const [mensajes, setMensajes] = useState<IMensaje[]>(defaultMessages);
   const [inputChat, setInputChat] = useState("");
   const [loadingResponse, setLoadingResponse] = useState(false);
@@ -313,7 +314,15 @@ export default function HomePage() {
     setIsLoading(true);
     const url =
       process.env.NEXT_PUBLIC_CHATBOT_API +
-      `/simulation?start_date=${encodeURIComponent(simulateForms.start_date)}&end_date=${encodeURIComponent(simulateForms.end_date)}&symbol=${stockSelected?.nameInMarket}&cash_at_risk=${encodeURIComponent(simulateForms.cash_at_risk.toString())}&budget=${encodeURIComponent(simulateForms.budget.toString())}`;
+      `/simulation?start_date=${encodeURIComponent(
+        simulateForms.start_date,
+      )}&end_date=${encodeURIComponent(simulateForms.end_date)}&symbol=${
+        stockSelected?.nameInMarket
+      }&cash_at_risk=${encodeURIComponent(
+        simulateForms.cash_at_risk.toString(),
+      )}&strategy_type=${encodeURIComponent(
+        simulateForms.strategy_type.toString(),
+      )}&budget=${encodeURIComponent(simulateForms.budget.toString())}`;
     const res = await fetch(url);
     const response = (await res.json()) as ISimulationHTMLs;
     console.log("response");
@@ -675,6 +684,29 @@ export default function HomePage() {
                             })
                           }
                         />
+                      </label>
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text text-xs font-medium text-gray-500">
+                            Estrategia a usar
+                          </span>
+                        </div>
+                        <select
+                          className="select select-bordered select-sm w-full max-w-xs"
+                          defaultValue={simulateForms.strategy_type}
+                          onChange={(e) =>
+                            setSimulateForms({
+                              ...simulateForms,
+                              strategy_type: e.target.value as
+                                | "inversion_activa"
+                                | "wyckoff",
+                            })
+                          }
+                        >
+                          {["wyckoff", "inversion_activa"].map((f, idx) => (
+                            <option key={idx}>{f}</option>
+                          ))}
+                        </select>
                       </label>
                     </div>
                     <div className="mr-4 mt-4 flex justify-end gap-2">

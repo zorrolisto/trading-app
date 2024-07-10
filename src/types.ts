@@ -67,4 +67,5 @@ export interface ISimulateForm {
   end_date: string;
   cash_at_risk: number;
   budget: number;
+  strategy_type: "inversion_activa" | "wyckoff";
 }
