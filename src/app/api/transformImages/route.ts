@@ -9,19 +9,19 @@ export async function POST(req: Request) {
     const plot = path.resolve(__dirname, "plot.jpeg");
     const trades = path.resolve(__dirname, "trades.jpeg");
     try {
-        await nodeHtmlToImage({
+        const resPlot = await nodeHtmlToImage({
             output: plot,
-            html: htmls.plot_content,
+            html: htmls.plot_content, 
         })
-        await nodeHtmlToImage({
+        const resTrade = await nodeHtmlToImage({
             output: trades,
             html: htmls.trades_content,
         })
     
     return NextResponse.json({
         message: {
-            plot: readFileSync(plot).toString("base64"),
-            trades: readFileSync(trades).toString("base64"),
+            plot: resPlot.toString("base64"),
+            trades: resTrade.toString("base64"),
         }
     })
     } catch (error) {
