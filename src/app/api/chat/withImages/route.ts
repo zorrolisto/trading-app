@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { type ISimulationHTMLs } from "~/types";
 import { readFileSync } from "fs";
 import { NextResponse } from "next/server";
+import path from "path";
 
 interface dataReq {
     message: string;
@@ -12,6 +13,8 @@ interface dataReq {
 export async function POST(req: Request) {
     const { message } = await req.json() as dataReq;
     try {
+        const plot = path.resolve(process.cwd(), "src/app/api/images/plot.jpeg");
+        const trades = path.resolve(process.cwd(), "src/app/api/images/trades.jpeg");
         const result = await generateText({
             model: openai("gpt-4o"),
             system: "describe the grafics in the iamges",
@@ -21,11 +24,11 @@ export async function POST(req: Request) {
                     content: [
                         {
                             type:"image",
-                            image: readFileSync("src/app/api/images/plot.jpeg")
+                            image: readFileSync(plot)
                         },
                         {
                             type:"image",
-                            image: readFileSync("src/app/api/images/trades.jpeg")
+                            image: readFileSync(trades)
                         },
                         {
                             type:"text",
