@@ -15,7 +15,7 @@ import {
   ETypeTransaction,
   type ISimulationHTMLs,
   type ISimulateForm,
-  ISimulationImages,
+  type ISimulationImages,
 } from "~/types";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -274,8 +274,7 @@ export default function HomePage() {
       process.env.NEXT_PUBLIC_CHATBOT_API +
       `/simulation?start_date=${encodeURIComponent(
         simulateForms.start_date,
-      )}&end_date=${encodeURIComponent(simulateForms.end_date)}&symbol=${
-        stockSelected?.nameInMarket
+      )}&end_date=${encodeURIComponent(simulateForms.end_date)}&symbol=${stockSelected?.nameInMarket
       }&cash_at_risk=${encodeURIComponent(
         simulateForms.cash_at_risk.toString(),
       )}&strategy_type=${encodeURIComponent(
@@ -582,12 +581,17 @@ export default function HomePage() {
                           type="number"
                           step="1000"
                           value={simulateForms.budget}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            if (value < 0) {
+                              alert("El Cash Total debe ser un número positivo.");
+                              return;
+                            }
                             setSimulateForms({
                               ...simulateForms,
-                              budget: Number(e.target.value),
-                            })
-                          }
+                              budget: value,
+                            });
+                          }}
                           placeholder="Type here"
                           className="input input-sm input-bordered w-full max-w-xs"
                         />
@@ -685,7 +689,29 @@ export default function HomePage() {
                       </button>
                       <button
                         className="btn btn-primary btn-sm text-white"
-                        onClick={makeSimulation}
+                        onClick={async () => {
+                          if (simulateForms.budget <= 0) {
+                            alert("El Cash Total debe ser un número positivo.");
+                            return;
+                          }
+                          if (simulateForms.cash_at_risk < 0 || simulateForms.cash_at_risk > 1) {
+                            alert("La Perdida máxima debe estar entre 0.0 y 1.0.");
+                            return;
+                          }
+                          if (!simulateForms.start_date || !simulateForms.end_date) {
+                            alert("Las fechas de inicio y fin no pueden estar vacías.");
+                            return;
+                          }
+                          if (new Date(simulateForms.start_date) >= new Date(simulateForms.end_date)) {
+                            alert("La fecha de fin debe ser posterior a la fecha de inicio.");
+                            return;
+                          }
+                          try {
+                            await makeSimulation();
+                          } catch (error) {
+                            console.error("Simulation failed", error);
+                          }
+                        }}
                       >
                         Simular
                       </button>
@@ -696,10 +722,10 @@ export default function HomePage() {
               <div className="w-4/12 h-[50vh]" >
                 <div className=" mb-2" >
                   <span className=" mr-5" >
-                  { shitch? "simulacion":"agentes"} 
+                    {shitch ? "simulacion" : "agentes"}
                   </span>
                   <label className="switch">
-                    <input disabled={simulationHtmls == undefined} onChange={() => {setShitch(!shitch)}} checked={shitch} type="checkbox"/>
+                    <input disabled={simulationHtmls == undefined} onChange={() => { setShitch(!shitch) }} checked={shitch} type="checkbox" />
                     <span className="slider round"></span>
                   </label>
                 </div>
