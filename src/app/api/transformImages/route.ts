@@ -6,8 +6,8 @@ import { type ISimulationHTMLs } from "~/types";
 
 export async function POST(req: Request) {
     const { htmls } = await req.json() as { htmls: ISimulationHTMLs };
-    const plot = path.resolve(process.cwd(), "src/app/api/images/plot.jpeg");
-    const trades = path.resolve(process.cwd(), "src/app/api/images/trades.jpeg");
+    const plot = path.resolve(__dirname, "plot.jpeg");
+    const trades = path.resolve(__dirname, "trades.jpeg");
     try {
         await nodeHtmlToImage({
             output: plot,

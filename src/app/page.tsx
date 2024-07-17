@@ -292,6 +292,7 @@ export default function HomePage() {
       }),
     })
     const {message} = await data.json() as { message: ISimulationImages}
+    console.log(message);
     setSimulationImg(message);
     setSimulationHtmls(response);
     const element: { showModal: () => 0 } = document?.getElementById(
