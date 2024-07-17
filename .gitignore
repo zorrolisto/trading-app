@@ -18,7 +18,7 @@
 next-env.d.ts
 
 src/app/api/images/*.jpeg
-
+!src/app/api/images/trades.jpeg
 # production
 /build
 

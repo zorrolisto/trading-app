@@ -73,7 +73,7 @@ function ChatImage() {
                 }
             >
                 Simulación actual
-                <img className='h-40' src={image.src} alt='simulation' loading="lazy" />
+                <img className='h-40' src="/api/read" alt='simulation' loading="lazy" />
             </div>
         </div>
         {mensajes.map((m, idx) => (
