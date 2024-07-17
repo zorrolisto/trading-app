@@ -17,6 +17,8 @@
 /out/
 next-env.d.ts
 
+src/app/api/images/*.jpeg
+
 # production
 /build
 

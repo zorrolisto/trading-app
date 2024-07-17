@@ -274,3 +274,8 @@ export const defaultMessages = [
     text: "Hola soy StockBot, necesitas un consejo? :)",
   },
 ];
+
+export const prompts = {
+  asistant: "",
+  useImage: ""
+}

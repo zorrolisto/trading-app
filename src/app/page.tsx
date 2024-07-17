@@ -3,12 +3,10 @@
 import { SignedOut, SignedIn } from "@clerk/nextjs";
 import type { ApexOptions } from "apexcharts";
 import { useEffect, useState } from "react";
-import { data, defaultMessages } from "~/constants";
+import { data } from "~/constants";
 import {
-  ERemitente,
   type IData,
   type ICandle,
-  type IMensaje,
   type IStock,
   type IStockUser,
   type IStockInPossession,
@@ -21,10 +19,12 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
-import ManualDeUsuario from "./_components/ManualDeUsuario";
-import Simulation from "./_components/Simulation";
+import ManualDeUsuario from "./components/ManualDeUsuario";
+import Simulation from "./components/Simulation";
+import ChatComponet from "./components/ChatComponet";
+import ChatImage from "./components/ChatImage";
 
-const ChartDynamic = dynamic(() => import("./_components/chart"), {
+const ChartDynamic = dynamic(() => import("./components/chart"), {
   ssr: false,
 });
 
@@ -84,9 +84,6 @@ export default function HomePage() {
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
   const [selectFilter, setSelectFilter] = useState(0);
   const [tabSelected, setTabSelected] = useState(1);
-  const [mensajes, setMensajes] = useState<IMensaje[]>(defaultMessages);
-  const [inputChat, setInputChat] = useState("");
-  const [loadingResponse, setLoadingResponse] = useState(false);
   const [userStock, setUserStock] = useState<IStockUser | null>(null);
   const [stocks, setStocks] = useState<IStock[]>([]);
   const [simulateForms, setSimulateForms] = useState(simulateFormsDefault);
@@ -94,6 +91,7 @@ export default function HomePage() {
   const [stocksInPossession, setStocksInPossession] = useState<
     IStockInPossession[]
   >([]);
+  const [shitch, setShitch] = useState(false);
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
   const [stocksLatestPrice, setStocksLatestPrice] = useState<
     Record<string, number>
@@ -132,49 +130,7 @@ export default function HomePage() {
     setSelectFilter(filters.findIndex((d) => d === date));
     await getCandlesDataByFilter(date);
   };
-  const askAI = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== "Enter") return;
-    setInputChat("");
-    void getResponseFromAI(inputChat);
-  };
-  const getResponseFromAI = async (messageForAI: string) => {
-    setLoadingResponse(true);
-    const mensajesWithNew = [
-      ...mensajes,
-      {
-        orden: mensajes.length + 1,
-        text: messageForAI,
-        remitente: ERemitente.PERSONA,
-      },
-    ];
-    setMensajes(mensajesWithNew);
-    const res = await fetch(
-      process.env.NEXT_PUBLIC_CHATBOT_API + "/agent/invoke",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input: {
-            input: messageForAI,
-            chat_history: mensajesWithNew.map((m) => ({
-              type: m.remitente,
-              content: m.text,
-            })),
-          },
-        }),
-      },
-    );
-    const {
-      output: { output: response },
-    } = (await res.json()) as { output: { output: string } };
-    setLoadingResponse(false);
-    mensajesWithNew.push({
-      orden: mensajesWithNew.length + 1,
-      text: response,
-      remitente: ERemitente.MAQUINA,
-    });
-    setMensajes(mensajesWithNew);
-  };
+
   const sellStock = async (p: IStockInPossession) => {
     if (!userStock || !userId || !stockSelected) return;
     const stock = stocks.find((s) => s.id === Number(p.stockId));
@@ -325,8 +281,16 @@ export default function HomePage() {
       )}&budget=${encodeURIComponent(simulateForms.budget.toString())}`;
     const res = await fetch(url);
     const response = (await res.json()) as ISimulationHTMLs;
-    console.log("response");
-    console.log(response);
+    // console.log("response");
+    // console.log(response);
+    const data = await fetch("/api/transformImages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        htmls: response
+      }),
+    })
+    console.log(await data.json())
     setSimulationHtmls(response);
     const element: { showModal: () => 0 } = document?.getElementById(
       "my_modal_3",
@@ -334,6 +298,7 @@ export default function HomePage() {
       showModal: () => 0;
     };
     element.showModal();
+    setShitch(true);
     setIsLoading(false);
   };
 
@@ -497,7 +462,7 @@ export default function HomePage() {
                         }
                       />
                     </div>
-                    <div className="mt-2 flex items-center gap-1">
+                    <div className="mt-10 flex items-center gap-1">
                       <p className="text-sm">Filtros de fecha: </p>
                       {filters.map((f, idx) => (
                         <button
@@ -726,46 +691,21 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
-              <div className="h-[50vh] w-4/12 rounded-xl border border-gray-200">
-                <div className="h-5/6 overflow-auto px-1.5 py-4">
-                  {mensajes.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className={
-                        "chat " +
-                        (m.remitente === ERemitente.MAQUINA
-                          ? "chat-start"
-                          : "chat-end")
-                      }
-                    >
-                      <div
-                        className={
-                          "chat-bubble text-sm text-white " +
-                          (m.remitente === ERemitente.MAQUINA
-                            ? "chat-bubble-primary"
-                            : "chat-bubble-info")
-                        }
-                      >
-                        {m.text.split("---")[0]}
-                      </div>
-                    </div>
-                  ))}
+              <div className="w-4/12 h-[50vh]" >
+                <div className=" mb-2" >
+                  <span className=" mr-5" >
+                  { shitch? "simulacion":"agentes"} 
+                  </span>
+                  <label className="switch">
+                    <input disabled={simulationHtmls == undefined} onChange={() => {setShitch(!shitch)}} checked={shitch} type="checkbox"/>
+                    <span className="slider round"></span>
+                  </label>
                 </div>
-                <div className="flex h-1/6 items-center justify-center">
-                  <input
-                    className="h-full w-full rounded-b-lg bg-gray-50 p-3 text-sm text-gray-600"
-                    type="text"
-                    placeholder="Pregunta algo..."
-                    onChange={(e) => setInputChat(e.target.value)}
-                    value={inputChat}
-                    onKeyUp={askAI}
-                  />
-                </div>
-                {loadingResponse && (
-                  <div className="mt-1 w-full text-center text-xs font-bold text-primary">
-                    La IA está pensando...
-                  </div>
-                )}
+                  { 
+                    shitch
+                    ? <ChatImage/>
+                    : <ChatComponet/>
+                  }
               </div>
             </div>
           </div>
