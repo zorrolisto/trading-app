@@ -15,6 +15,7 @@ import {
   ETypeTransaction,
   type ISimulationHTMLs,
   type ISimulateForm,
+  ISimulationImages,
 } from "~/types";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -83,6 +84,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [candlesData, setCandlesData] = useState<ICandle[]>([]);
   const [selectFilter, setSelectFilter] = useState(0);
+  const [simluationImg, setSimulationImg] = useState<ISimulationImages>();
   const [tabSelected, setTabSelected] = useState(1);
   const [userStock, setUserStock] = useState<IStockUser | null>(null);
   const [stocks, setStocks] = useState<IStock[]>([]);
@@ -290,7 +292,8 @@ export default function HomePage() {
         htmls: response
       }),
     })
-    console.log(await data.json())
+    const {message} = await data.json() as { message: ISimulationImages}
+    setSimulationImg(message);
     setSimulationHtmls(response);
     const element: { showModal: () => 0 } = document?.getElementById(
       "my_modal_3",
@@ -301,7 +304,6 @@ export default function HomePage() {
     setShitch(true);
     setIsLoading(false);
   };
-
   return (
     <main>
       <SignedOut>
@@ -702,8 +704,8 @@ export default function HomePage() {
                   </label>
                 </div>
                   { 
-                    shitch
-                    ? <ChatImage/>
+                    (shitch && simluationImg !== undefined)
+                    ? <ChatImage simulation={simluationImg} />
                     : <ChatComponet/>
                   }
               </div>

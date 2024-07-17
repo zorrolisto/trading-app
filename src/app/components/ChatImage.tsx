@@ -3,10 +3,9 @@
 import React, { useState } from 'react'
 import { defaultMessages } from '~/constants';
 import { getResponseWithImage } from '~/services/api';
-import { ERemitente, type IMensaje } from '~/types';
-import image from '../api/images/trades.jpeg';
+import { ERemitente, type ISimulationImages, type IMensaje } from '~/types';
 
-function ChatImage() {
+function ChatImage({simulation}: { simulation: ISimulationImages }) {
     const [mensajes, setMensajes] = useState<IMensaje[]>([]);
     const [loadingResponse, setLoadingResponse] = useState(false);
     const [inputChat, setInputChat] = useState("");
@@ -23,7 +22,7 @@ function ChatImage() {
         },
        ]
         setMensajes(nerMessajes);
-        void getResponseWithImage(inputChat).then((response) => {
+        void getResponseWithImage(inputChat, simulation).then((response) => {
             const newMessages = [
                 ...nerMessajes,
                 {
@@ -40,6 +39,7 @@ function ChatImage() {
             console.error(error)
         })
     }
+    console.log(simulation.trades)
     return (
     <form onSubmit={handleSubmit} className=" h-full rounded-xl border border-gray-200">
         <div className="h-5/6 overflow-auto px-1.5 py-4">
@@ -73,7 +73,7 @@ function ChatImage() {
                 }
             >
                 Simulación actual
-                <img className='h-40' src="/api/read" alt='simulation' loading="lazy" />
+                <img className='h-40' src={`data:image/jpeg;base64, ${simulation.trades}`} alt='simulation' loading="lazy" />
             </div>
         </div>
         {mensajes.map((m, idx) => (

@@ -62,6 +62,11 @@ export interface ISimulationHTMLs {
   trades_content: string;
 }
 
+export interface ISimulationImages {
+  plot: string;
+  trades: string;
+}
+
 export interface ISimulateForm {
   start_date: string;
   end_date: string;

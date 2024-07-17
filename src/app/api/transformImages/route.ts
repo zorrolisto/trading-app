@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { NextResponse } from "next/server";
 import nodeHtmlToImage from "node-html-to-image";
 import path from "path";
@@ -16,8 +17,12 @@ export async function POST(req: Request) {
             output: trades,
             html: htmls.trades_content,
         })
+    
     return NextResponse.json({
-        message: "success"
+        message: {
+            plot: readFileSync(plot).toString("base64"),
+            trades: readFileSync(trades).toString("base64"),
+        }
     })
     } catch (error) {
         console.error(error)
